@@ -6,22 +6,30 @@ import (
 )
 
 type ConcurrentStore struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	Store map[string]any
 }
 
-func (s *ConcurrentStore) Set(key string, value any) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.Store[key] = value
+type Storer interface {
+	Set(key string, value any)
+	Get(key string) (any, bool)
 }
 
-func (s *ConcurrentStore) Get(key string) (any, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if key == "" {
-		fmt.Println("Empty key")
+func (c *ConcurrentStore) Set(key string, value any) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if key != "" && value != nil {
+		c.Store[key] = value
 	}
-	value, exists := s.Store[key]
+}
+
+func (c *ConcurrentStore) Get(key string) (any, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if key == "" {
+		fmt.Printf("The key is missing: %q\n", key)
+	}
+	value, exists := c.Store[key]
+
 	return value, exists
 }
